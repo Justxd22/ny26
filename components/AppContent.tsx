@@ -10,8 +10,11 @@ import ScanningLens from "./ScanningLens";
 import { playSound } from "@/utils/audio";
 
 // --- BACKGROUND WALL COMPONENT ---
-const BackgroundWall = () => {
+const BackgroundWall = ({ onIntroComplete }: { onComplete?: () => void, onIntroComplete?: () => void }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const frameRef = useRef(0);
+    const startTimeRef = useRef(0);
+    const isSettledRef = useRef(false);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -19,39 +22,91 @@ const BackgroundWall = () => {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        const render = () => {
+        // Intro Animation Constants
+        const DURATION = 3000; // 2.5s
+        // Total pixels to scroll during the animation. 
+        // Making it a multiple of lineHeight ensures alignment if we were linear, 
+        // but since we settle to 0 offset, it naturally aligns.
+        const TOTAL_SCROLL_DIST = 5000; 
+
+        // Easing function: easeOutQuint for fast start, smooth stop
+        const easeOutQuint = (x: number): number => {
+            return 1 - Math.pow(1 - x, 5);
+        };
+
+        const render = (timestamp: number) => {
+            if (!startTimeRef.current) startTimeRef.current = timestamp;
+            const elapsed = timestamp - startTimeRef.current;
+            const progress = Math.min(elapsed / DURATION, 1);
+            
             const width = window.innerWidth;
             const height = window.innerHeight;
             const dpr = window.devicePixelRatio || 1;
-            canvas.width = width * dpr;
-            canvas.height = height * dpr;
-            ctx.scale(dpr, dpr);
+            
+            if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
+                canvas.width = width * dpr;
+                canvas.height = height * dpr;
+                ctx.scale(dpr, dpr);
+            }
 
             ctx.fillStyle = '#050505';
             ctx.fillRect(0, 0, width, height);
 
-            const fontSize = Math.min(width, height) * 0.27; // Even bigger for the new font
+            const fontSize = Math.min(width, height) * 0.27; 
             ctx.font = `bold ${fontSize}px "Incised 901 Nord"`;
-            ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillStyle = '#3f6958ff'; 
             
             const lineHeight = fontSize * 0.8;
-            const totalLines = Math.ceil(height / lineHeight) + 2;
+            const totalLines = Math.ceil(height / lineHeight) + 4; 
             
-            for (let i = -1; i < totalLines; i++) {
-                const y = i * lineHeight + (lineHeight / 2);
-                ctx.fillText("2025", width / 2, y);
+            const scrollPos = TOTAL_SCROLL_DIST * (1 - easeOutQuint(progress));
+            let offsetLeft = scrollPos;
+            let offsetRight = -scrollPos;
+
+            if (progress >= 1 && !isSettledRef.current) {
+                isSettledRef.current = true;
+                if (onIntroComplete) onIntroComplete();
             }
+
+            const centerX = width / 2;
+            const gap = 4; // Tiny gap for the "split" look
+
+            // Draw Pattern
+            for (let i = -2; i < totalLines; i++) {
+                const baseY = i * lineHeight + (lineHeight / 2);
+                
+                // Left Column ("20") - Right Aligned
+                ctx.textAlign = 'right';
+                const yLeft = (baseY + offsetLeft) % (lineHeight * totalLines);
+                const drawYLeft = yLeft < -lineHeight ? yLeft + (lineHeight * totalLines) : yLeft;
+                ctx.fillText("20", centerX - gap, drawYLeft);
+
+                // Right Column ("25") - Left Aligned
+                ctx.textAlign = 'left';
+                const yRight = (baseY + offsetRight) % (lineHeight * totalLines);
+                const drawYRight = yRight < -lineHeight ? yRight + (lineHeight * totalLines) : (yRight > height + lineHeight ? yRight - (lineHeight * totalLines) : yRight);
+                ctx.fillText("25", centerX + gap, drawYRight);
+            }
+
+            // Center Line Divider
+            ctx.strokeStyle = '#3f695833'; // Make divider very subtle
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(width / 2, 0);
+            ctx.lineTo(width / 2, height);
+            ctx.stroke();
+
+            frameRef.current = requestAnimationFrame(render);
         };
 
-  document.fonts
-    .load('700 100px "Incised 901 Nord"')
-    .then(render);
+        // Font loading check
+        document.fonts.load('700 100px "Incised 901 Nord"').then(() => {
+             frameRef.current = requestAnimationFrame(render);
+        });
 
-        window.addEventListener('resize', render);
-        return () => window.removeEventListener('resize', render);
-    }, []);
+        return () => cancelAnimationFrame(frameRef.current);
+    }, [onIntroComplete]);
 
     return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-40" />;
 };
@@ -108,6 +163,7 @@ const Act1_Boot = ({ onComplete }: { onComplete: () => void }) => {
 const Act2_OldWorld = ({ onDelete }: { onDelete: () => void }) => {
   const [showWarning, setShowWarning] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [introFinished, setIntroFinished] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [deleteProgress, setDeleteProgress] = useState(0);
 
@@ -158,25 +214,36 @@ const Act2_OldWorld = ({ onDelete }: { onDelete: () => void }) => {
   return (
     <div className="relative h-full w-full overflow-hidden flex flex-col items-center justify-center z-10 bg-black">
       
-      {/* 1. BACKGROUND WALL (Static) */}
-      <BackgroundWall />
+      {/* 1. BACKGROUND WALL (Animated Intro -> Static) */}
+      <BackgroundWall onIntroComplete={() => setIntroFinished(true)} />
 
-      {/* 2. SCANNING LENS (Distorted Foreground) */}
-      <ScanningLens 
-        text={isDeleting ? steps[stepIndex] : "DELETE\n2025?"}
-        color={isDeleting ? "#ef4444" : "#00ff88"}
-        isScanning={true}
-        fontSize={70} 
-        intensity={1.5}
-      />
+      {/* 2. SCANNING LENS (Distorted Foreground) - Only show after intro */}
+      <AnimatePresence>
+        {introFinished && (
+            <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="absolute inset-0 z-10"
+            >
+                <ScanningLens 
+                    text={isDeleting ? steps[stepIndex] : "DELETE\n2025?"}
+                    color={isDeleting ? "#ef4444" : "#00ff88"}
+                    isScanning={true}
+                    fontSize={100} 
+                    intensity={2.5}
+                />
+            </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 3. UI OVERLAY */}
       <div className="z-20 flex flex-col items-center space-y-8 w-full absolute pointer-events-none">
         
-        {!isDeleting && (
+        {introFinished && !isDeleting && (
              <motion.button
-             initial={{ scale: 0 }}
-             animate={{ scale: 1 }}
+             initial={{ scale: 0, opacity: 0 }}
+             animate={{ scale: 1, opacity: 1 }}
+             transition={{ delay: 0.5 }}
              whileHover={{ scale: 1.1 }}
              whileTap={{ scale: 0.9 }}
              onClick={handleDeleteClick}

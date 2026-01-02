@@ -10,7 +10,7 @@ import ScanningLens from "./ScanningLens";
 import { playSound } from "@/utils/audio";
 
 // --- BACKGROUND WALL COMPONENT ---
-const BackgroundWall = ({ onIntroComplete }: { onComplete?: () => void, onIntroComplete?: () => void }) => {
+const BackgroundWall = ({ onIntroComplete, isGlitch = false }: { onComplete?: () => void, onIntroComplete?: () => void, isGlitch?: boolean }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const frameRef = useRef(0);
     const startTimeRef = useRef(0);
@@ -24,12 +24,8 @@ const BackgroundWall = ({ onIntroComplete }: { onComplete?: () => void, onIntroC
 
         // Intro Animation Constants
         const DURATION = 3000; // 2.5s
-        // Total pixels to scroll during the animation. 
-        // Making it a multiple of lineHeight ensures alignment if we were linear, 
-        // but since we settle to 0 offset, it naturally aligns.
         const TOTAL_SCROLL_DIST = 5000; 
 
-        // Easing function: easeOutQuint for fast start, smooth stop
         const easeOutQuint = (x: number): number => {
             return 1 - Math.pow(1 - x, 5);
         };
@@ -49,22 +45,41 @@ const BackgroundWall = ({ onIntroComplete }: { onComplete?: () => void, onIntroC
                 ctx.scale(dpr, dpr);
             }
 
-            ctx.fillStyle = '#050505';
+            if (isGlitch) {
+                ctx.fillStyle = Math.random() > 0.9 ? '#110000' : '#000000';
+            } else {
+                ctx.fillStyle = '#050505';
+            }
             ctx.fillRect(0, 0, width, height);
 
             const fontSize = Math.min(width, height) * 0.27; 
             ctx.font = `bold ${fontSize}px "Incised 901 Nord"`;
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#3f6958ff'; 
+            
+            if (isGlitch) {
+                 ctx.fillStyle = Math.random() > 0.7 ? '#ff0000' : '#3f6958ff';
+            } else {
+                 ctx.fillStyle = '#3f6958ff'; 
+            }
             
             const lineHeight = fontSize * 0.8;
             const totalLines = Math.ceil(height / lineHeight) + 4; 
             
-            const scrollPos = TOTAL_SCROLL_DIST * (1 - easeOutQuint(progress));
+            let scrollPos = TOTAL_SCROLL_DIST * (1 - easeOutQuint(progress));
+            
+            if (isGlitch) {
+                scrollPos = (Math.random() * 100); // Jitter
+            }
+
             let offsetLeft = scrollPos;
             let offsetRight = -scrollPos;
 
-            if (progress >= 1 && !isSettledRef.current) {
+            if (isGlitch) {
+                 offsetLeft += (Math.random() * 50 - 25);
+                 offsetRight += (Math.random() * 50 - 25);
+            }
+
+            if (!isGlitch && progress >= 1 && !isSettledRef.current) {
                 isSettledRef.current = true;
                 if (onIntroComplete) onIntroComplete();
             }
@@ -86,11 +101,15 @@ const BackgroundWall = ({ onIntroComplete }: { onComplete?: () => void, onIntroC
                 ctx.textAlign = 'left';
                 const yRight = (baseY + offsetRight) % (lineHeight * totalLines);
                 const drawYRight = yRight < -lineHeight ? yRight + (lineHeight * totalLines) : (yRight > height + lineHeight ? yRight - (lineHeight * totalLines) : yRight);
-                ctx.fillText("25", centerX + gap, drawYRight);
+                
+                let textRight = "25";
+                if (isGlitch && Math.random() > 0.8) textRight = Math.random() > 0.5 ? "26" : "ERROR";
+
+                ctx.fillText(textRight, centerX + gap, drawYRight);
             }
 
             // Center Line Divider
-            ctx.strokeStyle = '#3f695833'; // Make divider very subtle
+            ctx.strokeStyle = isGlitch ? '#ff000055' : '#3f695833'; 
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(width / 2, 0);
@@ -298,6 +317,34 @@ const Act2_OldWorld = ({ onDelete }: { onDelete: () => void }) => {
       </AnimatePresence>
     </div>
   );
+};
+
+// --- ACT III: SYSTEM PURGE ---
+const Act3_Glitch = ({ onComplete }: { onComplete: () => void }) => {
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            onComplete();
+        }, 4000);
+        return () => clearTimeout(timer);
+    }, [onComplete]);
+
+    return (
+        <div className="relative h-full w-full overflow-hidden flex flex-col items-center justify-center z-10 bg-black">
+             <BackgroundWall isGlitch={true} />
+             <div className="absolute inset-0 z-20 mix-blend-hard-light opacity-80">
+                 <ScanningLens 
+                    text={"SYSTEM\nFAILURE"} 
+                    color="#ff0000" 
+                    intensity={4.0} 
+                    speed={5.0} 
+                    isScanning={true} 
+                 />
+             </div>
+             <div className="z-30 font-pixel text-red-500 text-2xl md:text-5xl animate-pulse bg-black p-4 border-2 border-red-500 shadow-[0_0_50px_rgba(255,0,0,0.8)]">
+                CRITICAL ERROR
+             </div>
+        </div>
+    );
 };
 
 // --- ACT IV: THE HYPERSPEED DOWNLOAD ---
@@ -540,7 +587,8 @@ function MainContent() {
         <div className="screen-content">
             <AnimatePresence mode="wait">
                 {act === 1 && <Act1_Boot key="act1" onComplete={() => setAct(2)} />}
-                {act === 2 && <Act2_OldWorld key="act2" onDelete={() => setAct(4)} /> } 
+                {act === 2 && <Act2_OldWorld key="act2" onDelete={() => setAct(3)} /> } 
+                {act === 3 && <Act3_Glitch key="act3" onComplete={() => setAct(4)} />}
                 {act === 4 && <Act4_Download key="act4" onComplete={() => setAct(5)} />}
                 {act === 5 && <Act5_Installation key="act5" onComplete={() => setAct(6)} />}
                 {act === 6 && <ActFinale key="act6" name={name} />}

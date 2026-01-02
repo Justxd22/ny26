@@ -9,6 +9,7 @@ interface ScanningLensProps {
   color?: string;
   className?: string;
   isScanning?: boolean;
+  speed?: number;
 }
 
 const ScanningLens = ({
@@ -17,11 +18,12 @@ const ScanningLens = ({
   fontSize = 120,
   color = '#00ff88',
   className = "",
-  isScanning = true
+  isScanning = true,
+  speed = 1.0
 }: ScanningLensProps) => {
   // Config from user
   const glowIntensity = 50;
-  const animationSpeed = 1.0; // 1.0 = normal speed
+  const animationSpeed = speed; // Use prop
   const lineSpacing = 1.2;
 
   const canvasRef = useRef<HTMLCanvasElement>(null);

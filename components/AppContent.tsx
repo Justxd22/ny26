@@ -1,14 +1,60 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "next/navigation";
-import { Canvas } from "@react-three/fiber";
-import { Text, Float, Stars, PerspectiveCamera } from "@react-three/drei";
 import confetti from "canvas-confetti";
 import Snow from "./Snow";
 import FisheyeText from "./FisheyeText";
+import ScanningLens from "./ScanningLens";
 import { playSound } from "@/utils/audio";
+
+// --- BACKGROUND WALL COMPONENT ---
+const BackgroundWall = () => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const render = () => {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx.scale(dpr, dpr);
+
+            ctx.fillStyle = '#050505';
+            ctx.fillRect(0, 0, width, height);
+
+            const fontSize = Math.min(width, height) * 0.27; // Even bigger for the new font
+            ctx.font = `bold ${fontSize}px "Incised 901 Nord"`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#3f6958ff'; 
+            
+            const lineHeight = fontSize * 0.8;
+            const totalLines = Math.ceil(height / lineHeight) + 2;
+            
+            for (let i = -1; i < totalLines; i++) {
+                const y = i * lineHeight + (lineHeight / 2);
+                ctx.fillText("2025", width / 2, y);
+            }
+        };
+
+  document.fonts
+    .load('700 100px "Incised 901 Nord"')
+    .then(render);
+
+        window.addEventListener('resize', render);
+        return () => window.removeEventListener('resize', render);
+    }, []);
+
+    return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-40" />;
+};
 
 // --- ACT I: THE ARRIVAL ---
 const Act1_Boot = ({ onComplete }: { onComplete: () => void }) => {
@@ -83,7 +129,6 @@ const Act2_OldWorld = ({ onDelete }: { onDelete: () => void }) => {
     setShowWarning(false);
     setIsDeleting(true);
     
-    // Progress Bar Logic
     const progressInterval = setInterval(() => {
         setDeleteProgress(prev => {
             if (prev >= 100) {
@@ -94,8 +139,6 @@ const Act2_OldWorld = ({ onDelete }: { onDelete: () => void }) => {
         });
     }, 40);
 
-    // Step Logic
-    // Show each text for ~800ms
     const stepInterval = setInterval(() => {
         setStepIndex(prev => {
             if (prev >= steps.length - 1) {
@@ -106,45 +149,30 @@ const Act2_OldWorld = ({ onDelete }: { onDelete: () => void }) => {
                 }, 1000);
                 return prev;
             }
-            playSound('type'); // Sound on text switch
+            playSound('type'); 
             return prev + 1;
         });
-    }, 1200); // Slower switch to let the user read
+    }, 1200); 
   };
 
   return (
-    <div className="relative h-full w-full overflow-hidden flex flex-col items-center justify-center z-10">
-      {/* 3D Background Layer */}
-      <div className="absolute inset-0 z-0">
-        <Canvas>
-          <PerspectiveCamera makeDefault position={[0, 0, 15]} />
-          <ambientLight intensity={0.5} />
-          <pointLight position={[10, 10, 10]} />
-          <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-          
-          <Suspense fallback={null}>
-            <Float speed={5} rotationIntensity={isDeleting ? 2 : 0.2} floatIntensity={0.5} floatingRange={[-0.5, 0.5]}>
-                <Text
-                    fontSize={isDeleting ? 3 : 5}
-                    color={isDeleting ? "#ff0000" : "#d4aa00"} 
-                    anchorX="center"
-                    anchorY="middle"
-                >
-                    {isDeleting ? "CORRUPTED" : "2025"}
-                    <meshStandardMaterial 
-                        color={isDeleting ? "red" : "#c0c0c0"} 
-                        emissive={isDeleting ? "red" : "black"}
-                        emissiveIntensity={isDeleting ? 3 : 0}
-                        wireframe={isDeleting}
-                    />
-                </Text>
-            </Float>
-          </Suspense>
-        </Canvas>
-      </div>
+    <div className="relative h-full w-full overflow-hidden flex flex-col items-center justify-center z-10 bg-black">
+      
+      {/* 1. BACKGROUND WALL (Static) */}
+      <BackgroundWall />
 
-      {/* UI Overlay */}
-      <div className="z-10 flex flex-col items-center space-y-8 w-full">
+      {/* 2. SCANNING LENS (Distorted Foreground) */}
+      <ScanningLens 
+        text={isDeleting ? steps[stepIndex] : "DELETE\n2025?"}
+        color={isDeleting ? "#ef4444" : "#00ff88"}
+        isScanning={true}
+        fontSize={70} 
+        intensity={1.5}
+      />
+
+      {/* 3. UI OVERLAY */}
+      <div className="z-20 flex flex-col items-center space-y-8 w-full absolute pointer-events-none">
+        
         {!isDeleting && (
              <motion.button
              initial={{ scale: 0 }}
@@ -152,41 +180,20 @@ const Act2_OldWorld = ({ onDelete }: { onDelete: () => void }) => {
              whileHover={{ scale: 1.1 }}
              whileTap={{ scale: 0.9 }}
              onClick={handleDeleteClick}
-             className="px-8 py-4 bg-red-600 text-white font-pixel border-4 border-red-800 hover:bg-red-500 shadow-[0_0_20px_rgba(255,0,0,0.5)] uppercase tracking-widest text-xl cursor-pointer chromatic-text"
+             className="pointer-events-auto px-12 py-6 bg-red-600 text-white font-pixel border-4 border-red-800 hover:bg-red-500 shadow-[0_0_30px_rgba(255,0,0,0.6)] uppercase tracking-widest text-2xl cursor-pointer chromatic-text mt-96"
            >
-             [ DELETE 2025.OLD ]
+             [ DELETE ]
            </motion.button>
         )}
 
         {isDeleting && (
-            <div className="flex flex-col items-center justify-center space-y-8 w-full absolute inset-0 bg-black/90 z-50">
-                <div className="flex-1 flex items-center justify-center w-full">
-                    <AnimatePresence mode="wait">
-                        <motion.div 
-                            key={stepIndex} // Key change triggers animation
-                            initial={{ scale: 0.2, opacity: 0, rotate: -15, filter: "blur(10px)" }}
-                            animate={{ scale: 1, opacity: 1, rotate: 0, filter: "blur(0px)" }}
-                            exit={{ scale: 3, opacity: 0, rotate: 10, filter: "blur(20px)" }}
-                            transition={{ type: "spring", stiffness: 200, damping: 10 }}
-                            className="w-full flex justify-center"
-                        >
-                            <FisheyeText 
-                                text={steps[stepIndex]} 
-                                color="#ef4444" 
-                                intensity={2.5} 
-                                fontSize={180} 
-                                className="w-full max-w-5xl"
-                            />
-                        </motion.div>
-                    </AnimatePresence>
-                </div>
-                
-                <div className="w-full max-w-2xl px-8 pb-20">
-                    <div className="w-full h-12 border-4 border-red-500 p-2 bg-black shadow-[0_0_30px_rgba(255,0,0,0.4)]">
+            <div className="flex flex-col items-center justify-center w-full mt-[60vh]">
+                <div className="w-full max-w-xs md:max-w-2xl px-4">
+                    <div className="w-full h-8 border-4 border-red-500 p-1 bg-black shadow-[0_0_30px_rgba(255,0,0,0.4)]">
                         <div className="h-full bg-red-500 shadow-[0_0_20px_rgba(255,0,0,0.8)]" style={{ width: `${deleteProgress}%` }} />
                     </div>
-                    <div className="font-pixel text-red-500 animate-pulse text-2xl text-center mt-4">
-                        SYSTEM PURGE: {deleteProgress}%
+                    <div className="font-pixel text-red-500 animate-pulse text-lg text-center mt-2 bg-black/50">
+                        PURGING: {deleteProgress}%
                     </div>
                 </div>
             </div>
@@ -200,7 +207,7 @@ const Act2_OldWorld = ({ onDelete }: { onDelete: () => void }) => {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-auto"
           >
             <div className="win98-window w-[90%] max-w-md p-1">
               <div className="win98-header flex justify-between items-center">
@@ -246,7 +253,6 @@ const Act4_Download = ({ onComplete }: { onComplete: () => void }) => {
                     return 100;
                 }
                 
-                // Switch download text occasionally
                 if (Math.random() > 0.7) {
                     setCurrentDownload(downloads[Math.floor(Math.random() * downloads.length)]);
                     playSound('type');
@@ -322,8 +328,7 @@ const Act5_Installation = ({ onComplete }: { onComplete: () => void }) => {
                 setTimeout(onComplete, 2000);
                 return;
             }
-            // Random positions for chaos
-            const x = Math.random() * 40 - 20; // -20% to 20% center offset
+            const x = Math.random() * 40 - 20; 
             const y = Math.random() * 40 - 20;
             
             setPopups(prev => [...prev, { id: i, text: tasks[i], x, y }]);
@@ -467,7 +472,7 @@ function MainContent() {
         <div className="screen-content">
             <AnimatePresence mode="wait">
                 {act === 1 && <Act1_Boot key="act1" onComplete={() => setAct(2)} />}
-                {act === 2 && <Act2_OldWorld key="act2" onDelete={() => setAct(4)} />}
+                {act === 2 && <Act2_OldWorld key="act2" onDelete={() => setAct(4)} /> } 
                 {act === 4 && <Act4_Download key="act4" onComplete={() => setAct(5)} />}
                 {act === 5 && <Act5_Installation key="act5" onComplete={() => setAct(6)} />}
                 {act === 6 && <ActFinale key="act6" name={name} />}

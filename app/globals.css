@@ -10,6 +10,31 @@
   --color-win-blue: #000080;
   --font-pixel: var(--font-silkscreen);
   --font-mono: var(--font-geist-mono);
+  --font-incised: "Incised 901", sans-serif;
+  --font-incised-nord: "Incised 901 Nord", sans-serif;
+}
+
+@font-face {
+  font-family: 'Incised 901';
+  src: url('/font/Incised 901.ttf') format('truetype');
+  font-weight: normal;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Incised 901 Nord';
+  src: url('/font/Incised 901 Nord.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Incised 901 Black';
+  src: url('/font/Incised 901 Black.ttf') format('truetype');
+  font-weight: 900;
+  font-display: swap;
+  font-style: normal;
 }
 
 :root {

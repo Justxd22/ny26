@@ -151,7 +151,7 @@ const ScanningLens = ({
 
         const centerX = lensX;
         const centerY = lensY;
-        const lensRadius = 220; // Slightly bigger for mobile impact
+        const lensRadius = 120; // Slightly bigger for mobile impact
 
         // Apply fisheye distortion
         // Optimization: Limit loop to lens area

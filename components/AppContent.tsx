@@ -223,13 +223,14 @@ const Act2_OldWorld = ({ onDelete }: { onDelete: () => void }) => {
             <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
+                transition={{ duration: 1, ease: "easeOut" }}
                 className="absolute inset-0 z-10"
             >
                 <ScanningLens 
                     text={isDeleting ? steps[stepIndex] : "DELETE\n2025?"}
                     color={isDeleting ? "#ef4444" : "#00ff88"}
                     isScanning={true}
-                    fontSize={100} 
+                    fontSize={80}
                     intensity={2.5}
                 />
             </motion.div>

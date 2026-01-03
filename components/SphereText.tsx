@@ -10,12 +10,12 @@ import * as THREE from "three";
 import { Lens } from "./LensEffect";
 
 const gridData = [
-  { id: "1A", word: "this",   col: -1, row: -1 },
-  { id: "2A", word: "is",     col:  0, row: -1 },
-  { id: "3A", word: "eye",    col:  1, row: -1 },
-  { id: "1B", word: "text",   col: -1, row:  1 },
-  { id: "2B", word: "fish",   col:  0, row:  1 },
-  { id: "3B", word: "effect", col:  1, row:  1 },
+  { id: "1A", word: "Deletin",   col: -1, row: -1 },
+  { id: "2A", word: "jet2holidy",     col:  0, row: -1 },
+  { id: "3A", word: "chat?",    col:  1, row: -1 },
+  { id: "1B", word: "Labubu",   col: -1, row:  1 },
+  { id: "2B", word: "67",   col:  0, row:  1 },
+  { id: "3B", word: "Aura", col:  1, row:  1 },
 ];
 
 const sequence = ["1A", "2A", "2B", "3A", "1B", "3B"];
@@ -99,7 +99,7 @@ const Word = ({ item, isTarget, config }: { item: any, isTarget: boolean, config
       anchorY="middle"
     //   outlineWidth={0.02}
     //   outlineColor={isTarget ? "#00ff88" : "transparent"}
-      color={isTarget ? "#00ff88" : "#fff"} 
+      color={isTarget ? "#ff2323" : "#fff"} 
       fillOpacity={1}
     >
       {item.word}
@@ -118,10 +118,10 @@ const SceneContent = () => {
   // These create the sliders on your screen
   const config = useControls("Sphere Settings", {
     radius: { value: isMobile? 2 : 3, min: 2, max: 10, step: 0.1 },
-    angleStepX: { value: isMobile? 75 : 90, min: 10, max: 90, step: 1, label: "H Spacing" },
+    angleStepX: { value: isMobile? 90 : 90, min: 10, max: 90, step: 1, label: "H Spacing" },
     angleStepY: { value: 15, min: 10, max: 90, step: 1, label: "V Spacing" },
-    fontBig: { value: isMobile? 0.7 : 1.4, min: 0.5, max: 3, step: 0.1 },
-    fontSmall: { value: isMobile? 0.5: 0.9, min: 0.5, max: 3, step: 0.1 },
+    fontBig: { value: isMobile? 0.7 : 1.1, min: 0.5, max: 3, step: 0.1 },
+    fontSmall: { value: isMobile? 0.4: 0.5, min: 0.1, max: 3, step: 0.1 },
     camZ: { value: 6.5, min: 2, max: 15, step: 0.5, label: "Camera Dist" },
   });
 
@@ -164,23 +164,23 @@ const SceneContent = () => {
       </motion.group>
 
       <EffectComposer disableNormalPass>
-        <Lens intensity={lensConfig.intensity} radius={lensConfig.radius} />
 
 
         {/* 2. Chromatic Aberration: Simulates speed/lens distortion */}
         <ChromaticAberration 
           // offset controls the blur distance. 
           // values like [0.002, 0.002] are subtle; [0.01, 0.01] are heavy
-          offset={new THREE.Vector2(0.002, 0.002)}
+          offset={new THREE.Vector2(isMobile? 0.004 : 0.002, isMobile? 0.004 : 0.002)}
           radialModulation={false}
           modulationOffset={0}
         />
+        <Lens intensity={lensConfig.intensity} radius={lensConfig.radius} />
       </EffectComposer>
     </>
   );
 };
 
-export default function Scene() {
+export default function SphereText() {
   return (
     <div className="w-full h-screen bg-black ">
       <Canvas camera={{ position: [0, 0, 6], fov: 80 }}>

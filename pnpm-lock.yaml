@@ -36,7 +36,7 @@ importers:
         specifier: ^0.562.0
         version: 0.562.0(react@19.1.0)
       next:
-        specifier: ^16
+        specifier: 16.1.1
         version: 16.1.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       postprocessing:
         specifier: ^6.38.2

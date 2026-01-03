@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Silkscreen } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -36,6 +37,7 @@ export default function RootLayout({
         <div className="noise-overlay" />
         <div className="scanline" />
         {children}
+        <Analytics />
       </body>
     </html>
   );

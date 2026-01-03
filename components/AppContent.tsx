@@ -973,13 +973,15 @@ function MainContent() {
   // Audio Ref for BGM
   const bgmRef = useRef<HTMLAudioElement>(null);
 
-  // Safari Unlock: Play (and mute) on first interaction
+  // Safari Unlock: Play then immediately Pause
   const unlockAudio = () => {
       const bgm = bgmRef.current;
       if (bgm) {
           bgm.volume = 0;
           bgm.play().then(() => {
               console.log("BGM Unlocked");
+              bgm.pause(); // Stop it immediately
+              bgm.currentTime = 0; // Reset
           }).catch(e => console.error("BGM Unlock Failed", e));
       }
   };

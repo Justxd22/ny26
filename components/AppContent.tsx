@@ -8,6 +8,8 @@ import Snow from "./Snow";
 import FisheyeText from "./FisheyeText";
 import ScanningLens from "./ScanningLens";
 import SphereText from "./SphereText";
+import InstallationCube from "./InstallationCube";
+import MetalText from "./MetalText";
 import { playSound } from "@/utils/audio";
 
 // --- BACKGROUND WALL COMPONENT ---
@@ -569,80 +571,229 @@ const Act4_Download = ({ onComplete }: { onComplete: () => void }) => {
     );
 };
 
-// --- ACT V: THE INSTALLATION (Popups) ---
+// --- ACT V: THE INSTALLATION (28-38 seconds) ---
 const Act5_Installation = ({ onComplete }: { onComplete: () => void }) => {
-    const [popups, setPopups] = useState<{id: number, text: string, x: number, y: number}[]>([]);
+    const [step, setStep] = useState<'prompt' | 'installing' | 'viewCube' | 'complete'>('prompt');
+    const [typedY, setTypedY] = useState("");
+    const [logs, setLogs] = useState<{task: string, id: number}[]>([]);
+    const [progress, setProgress] = useState(0);
+
+    // Prompt Step
+    useEffect(() => {
+        if (step === 'prompt') {
+            const timer = setTimeout(() => {
+                setTypedY("Y");
+                playSound('type');
+                setTimeout(() => setStep('installing'), 800);
+            }, 1500);
+            return () => clearTimeout(timer);
+        }
+    }, [step]);
+
+    // Installing Step
+    useEffect(() => {
+        if (step === 'installing') {
+            const totalDuration = 10000; // 10 seconds installation
+            const intervalTime = 100;
+            const increments = totalDuration / intervalTime;
+            
+            const timer = setInterval(() => {
+                setProgress(prev => {
+                    const next = prev + (100 / increments);
+                    if (next >= 100) {
+                        clearInterval(timer);
+                        // After progress finishes, wait a bit then show cube only
+                        setTimeout(() => setStep('viewCube'), 1000);
+                        return 100;
+                    }
+                    return next;
+                });
+            }, intervalTime);
+
+            return () => clearInterval(timer);
+        }
+    }, [step]);
+
+    // Transition from viewCube to complete
+    useEffect(() => {
+        if (step === 'viewCube') {
+            const timer = setTimeout(() => {
+                setStep('complete');
+            }, 4000); // 4 seconds of uninterrupted cube view
+            return () => clearTimeout(timer);
+        }
+    }, [step]);
+
+    // Task Logs Logic
     const tasks = [
-        "Installing happiness modules...", "Configuring success parameters...", 
-        "Updating friendship drivers...", "Optimizing luck algorithms...",
-        "Patching bad habits...", "Calibrating aura...", "Deleting cringe..."
+        "Installing happiness...", "Installing New friends...", "Adding luck...", 
+        "Calibrating aura...",  "Downloading weekend plans...", "Refactoring life choices..."
     ];
 
     useEffect(() => {
-        let i = 0;
-        const interval = setInterval(() => {
-            if (i >= tasks.length) {
-                clearInterval(interval);
-                setTimeout(onComplete, 2000);
-                return;
-            }
-            const x = Math.random() * 40 - 20; 
-            const y = Math.random() * 40 - 20;
-            
-            setPopups(prev => [...prev, { id: i, text: tasks[i], x, y }]);
-            playSound('type');
-            i++;
-        }, 500);
-        return () => clearInterval(interval);
-    }, []);
+        if (step === 'installing') {
+            let count = 0;
+            const logInterval = setInterval(() => {
+                if (count >= tasks.length) { 
+                    clearInterval(logInterval);
+                    return;
+                }
+                const currentTask = tasks[count];
+                setLogs(prev => [...prev, { task: currentTask, id: count }]);
+                playSound('type');
+                count++;
+            }, 1200); // Sequential spawn every 1.2s
+            return () => clearInterval(logInterval);
+        }
+    }, [step]);
+
+    // Complete Step
+    useEffect(() => {
+        if (step === 'complete') {
+            playSound('success');
+            setTimeout(onComplete, 2000);
+        }
+    }, [step, onComplete]);
 
     return (
-        <div className="h-full w-full relative overflow-hidden flex items-center justify-center z-10">
-            {/* Popups Grid */}
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                {popups.map((popup) => (
-                    <motion.div
-                        key={popup.id}
-                        initial={{ scale: 0 }} animate={{ scale: 1 }}
-                        className="win98-window p-1 absolute w-64 shadow-xl"
-                        style={{ transform: `translate(${popup.x}vw, ${popup.y}vh)` }}
+        <div className={`h-full w-full relative overflow-hidden flex flex-col items-center justify-center z-10 transition-colors duration-1000 ${step === 'installing' || step === 'viewCube' ? 'bg-blue-950' : 'bg-black'}`}>
+            
+            {/* 1. BACKGROUND LAYERS */}
+            {(step === 'installing' || step === 'viewCube') && (
+                <>
+                    <InstallationCube />
+                    <div className="absolute inset-0 bg-blue-900/20 mix-blend-overlay z-0" />
+                    <Snow /> 
+                </>
+            )}
+
+            {/* 2. CLI PROMPT OVERLAY */}
+            <AnimatePresence>
+                {step === 'prompt' && (
+                    <motion.div 
+                        exit={{ opacity: 0 }}
+                        className="font-mono text-xl md:text-3xl text-green-500 z-50"
                     >
-                        <div className="win98-header">INSTALLER_WIZARD.EXE</div>
-                        <div className="p-4 bg-white text-xs text-black font-sans">
-                            <p className="mb-2 font-bold">{popup.text}</p>
-                            <div className="w-full h-2 bg-gray-200 border inset">
-                                <motion.div 
-                                    initial={{ width: 0 }} animate={{ width: "100%" }} transition={{ duration: 0.4 }}
-                                    className="h-full bg-blue-700" 
-                                />
+                        {"> INSTALL 2026? [Y/N]: "}{typedY}<span className="animate-pulse">_</span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* 3. INSTALLATION GRID UI */}
+            <AnimatePresence>
+                {step === 'installing' && (
+                    <motion.div 
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="absolute inset-0 z-20 flex flex-col justify-between p-8 pointer-events-none"
+                    >
+                        {/* Top Header */}
+                        <div className="flex justify-between items-start">
+                            <div className="font-mono text-cyan-300 text-sm md:text-base bg-black/50 p-2 border border-cyan-500/30">
+                                {"> ROOT_ACCESS: GRANTED"}
+                            </div>
+                            <div className="font-pixel text-4xl text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]">
+                                {Math.floor(progress)}%
                             </div>
                         </div>
+
+                        {/* Floating Task Windows Grid (Retro Win98 Style) */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-8 w-full max-w-6xl mx-auto my-auto opacity-90 z-30">
+                            {logs.map((item, i) => (
+                                <motion.div 
+                                    key={item.id}
+                                    initial={{ scale: 0.8, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    className="win98-window p-1 shadow-xl backdrop-blur-sm bg-white/10"
+                                >
+                                    <div className="win98-header bg-gradient-to-r from-blue-800 to-blue-600 flex justify-between items-center px-2 py-1">
+                                        <span className="text-[10px] text-white font-bold">TASK_{1000+i}.EXE</span>
+                                        <button className="w-3 h-3 bg-gray-300 border border-gray-500 flex items-center justify-center text-[8px] hover:bg-red-500">x</button>
+                                    </div>
+                                    <div className="p-3 bg-white/80 font-mono text-xs md:text-sm text-black h-full min-h-[80px] flex flex-col justify-between">
+                                        <p className="mb-2 font-bold leading-tight">{item.task}</p>
+                                        <div className="w-full h-3 border-2 border-gray-400 p-[1px] bg-gray-200">
+                                             <div className="h-full bg-blue-700 w-full animate-pulse" />
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+
+                        {/* Bottom Footer */}
+                        <div className="text-center font-mono text-cyan-200 animate-pulse bg-black/50 p-2 inline-block mx-auto border-t border-cyan-500/30">
+                            {"> PLEASE DO NOT TURN OFF YOUR REALITY"}
+                        </div>
                     </motion.div>
-                ))}
-            </div>
+                )}
+            </AnimatePresence>
+
+            {/* 4. VIEW CUBE PHASE UI (Optional overlay) */}
+            <AnimatePresence>
+                 {step === 'viewCube' && (
+                    <motion.div 
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="absolute bottom-10 z-20 text-center w-full"
+                    >
+                         <div className="font-pixel text-xl text-white animate-pulse drop-shadow-[0_0_10px_white]">
+                            OPTIMIZATION COMPLETE. ENJOY 2026.
+                        </div>
+                    </motion.div>
+                 )}
+            </AnimatePresence>
+
+            {/* 5. COMPLETION FLASH */}
+            {step === 'complete' && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/10 backdrop-blur-xl p-4 text-center">
+                    <div className="font-pixel text-2xl md:text-5xl text-white drop-shadow-[0_0_20px_white] w-full break-words">
+                        REBOOTING TIMELINE...
+                    </div>
+                </div>
+            )}
             
-            <div className="absolute bottom-10 font-pixel text-white animate-pulse text-center w-full chromatic-text">
-                DO NOT TURN OFF YOUR REALITY...
-            </div>
+            {/* Screen Flash on Exit */}
+            <AnimatePresence>
+                {step === 'complete' && (
+                    <motion.div 
+                        initial={{ opacity: 0 }} 
+                        animate={{ opacity: 1 }} 
+                        transition={{ duration: 0.2, delay: 1.5 }}
+                        className="absolute inset-0 bg-white z-[100]"
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 };
 
-// --- ACT VI, VII, VIII: REVEAL & FINALE ---
+// --- ACT VI: THE REVELATION ---
 const ActFinale = ({ name }: { name: string }) => {
-    const [step, setStep] = useState("reveal"); // reveal -> search -> boom
+    const [step, setStep] = useState("search"); // Start with SEARCH
+    const [searchPhase, setSearchPhase] = useState(0);
 
     useEffect(() => {
         playSound('boot');
-        // Timeline
-        const t1 = setTimeout(() => setStep("search"), 4000); 
-        const t2 = setTimeout(() => {
-            setStep("boom");
-            playSound('success');
-        }, 7000);   
+        
+        // SEQUENCE:
+        // 1. Search Phase (0-4s)
+        // 2. Reveal Phase (4-8s)
+        // 3. Boom Phase (8s+)
 
-        return () => { clearTimeout(t1); clearTimeout(t2); };
-    }, []);
+        if (step === "search") {
+            const t1 = setTimeout(() => setSearchPhase(1), 1500); // Detecting...
+            const t2 = setTimeout(() => setSearchPhase(2), 3000); // Match Found!
+            const t3 = setTimeout(() => setStep("reveal"), 4500); // Move to Reveal
+
+            return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+        }
+
+        if (step === "reveal") {
+            const t4 = setTimeout(() => {
+                setStep("boom");
+                playSound('success');
+            }, 4000);
+            return () => clearTimeout(t4);
+        }
+    }, [step]);
 
     useEffect(() => {
         if (step === "boom") {
@@ -658,57 +809,134 @@ const ActFinale = ({ name }: { name: string }) => {
     }, [step]);
 
     return (
-        <div className="h-full w-full relative flex flex-col items-center justify-center overflow-hidden z-10">
-            <Snow /> 
+        <div className="h-full w-full relative flex flex-col items-center justify-center overflow-hidden z-10 bg-black">
             
-            {step === "reveal" && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center z-10">
-                    <h1 className="font-pixel text-6xl md:text-9xl text-white chromatic-text mb-4">
-                        2026
-                    </h1>
-                    <p className="font-mono text-cyber-blue mt-4 tracking-[0.5em] animate-pulse">TIMELINE REBOOTED</p>
-                </motion.div>
-            )}
+            {/* 3D Scene Background (Persistent but hidden during search) */}
+            <motion.div 
+                className="absolute inset-0 z-0"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: step === "search" ? 0 : 1 }}
+                transition={{ duration: 2 }}
+            >
+                <MetalText />
+            </motion.div>
 
-            {step === "search" && (
-                <motion.div className="z-10 font-mono text-cyber-green text-center space-y-4 bg-black/80 p-8 border border-cyber-green/50">
-                    <div className="animate-spin text-4xl">⟳</div>
-                    <p>{"> SEARCHING DATABASE..."}</p>
-                    <p>{"> DETECTING AWESOME HUMAN..."}</p>
-                    <p>{`> MATCH FOUND: ${name}`}</p>
-                </motion.div>
-            )}
-
-            {step === "boom" && (
-                <motion.div 
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="z-20 text-center relative px-4"
-                >
-                    <div className="absolute inset-0 bg-gradient-to-r from-cyber-pink via-cyber-blue to-cyber-green blur-[100px] opacity-20" />
-                    
-                    <h2 className="font-pixel text-xl md:text-3xl text-white mb-4 animate-bounce">HAPPY NEW YEAR</h2>
-                    <h1 className="font-black text-5xl md:text-9xl text-transparent bg-clip-text bg-gradient-to-br from-white via-cyber-blue to-cyber-pink drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] uppercase">
-                        {name}
-                    </h1>
-                    
-                    <div className="mt-12 space-y-2 font-mono text-xs md:text-sm text-cyber-yellow bg-black/50 p-4 inline-block backdrop-blur-sm border border-white/10">
-                        <p>{"> VIBES: IMMACULATE"}</p>
-                        <p>{"> FRIENDSHIP.EXE: RUNNING"}</p>
-                        <p>{"> LUCK: MAXIMIZED"}</p>
-                        <p>{"> 2026: LEGENDARY MODE"}</p>
-                    </div>
-
-                    <div className="mt-16">
-                        <button 
-                            onClick={() => window.location.reload()}
-                            className="px-8 py-3 border border-white/40 hover:bg-white/10 text-white font-pixel text-xs transition-colors cursor-pointer"
+            {/* Overlay UI */}
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none">
+                
+                {/* 1. SEARCH PHASE (Progressive) */}
+                <AnimatePresence mode="wait">
+                    {step === "search" && (
+                        <motion.div 
+                            key="search-card"
+                            initial={{ scale: 0.8, opacity: 0 }} 
+                            animate={{ scale: 1, opacity: 1 }} 
+                            exit={{ scale: 1.2, opacity: 0, filter: "blur(10px)" }}
+                            className="bg-black/80 border-2 border-cyan-500/50 p-8 md:p-12 backdrop-blur-xl shadow-[0_0_50px_rgba(0,255,255,0.2)] max-w-lg w-[90%]"
                         >
-                            PRESS START TO REPLAY
-                        </button>
-                    </div>
-                </motion.div>
-            )}
+                            {/* Header */}
+                            <div className="flex justify-between items-center mb-6 border-b border-cyan-800 pb-2">
+                                <span className="font-pixel text-xs text-cyan-500">DB_QUERY.EXE</span>
+                                <div className="flex space-x-1">
+                                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                                    <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse delay-75" />
+                                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse delay-150" />
+                                </div>
+                            </div>
+
+                            {/* Content Content */}
+                            <div className="space-y-4 font-mono text-sm md:text-lg">
+                                <motion.div 
+                                    className="text-cyan-300 flex items-center gap-2"
+                                    animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.5, repeat: Infinity }}
+                                >
+                                    <span className="text-xl">⟳</span> SEARCHING DATABASE...
+                                </motion.div>
+
+                                {searchPhase >= 1 && (
+                                    <motion.div 
+                                        initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
+                                        className="text-purple-300"
+                                    >
+                                        {"> DETECTING AWESOME HUMAN..."}
+                                    </motion.div>
+                                )}
+
+                                {searchPhase >= 2 && (
+                                    <motion.div 
+                                        initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
+                                        className="text-green-400 font-bold bg-green-900/20 p-2 border border-green-500/30"
+                                    >
+                                        {`> MATCH FOUND: ${name}`}
+                                    </motion.div>
+                                )}
+                            </div>
+                            
+                            {/* Loading Bar */}
+                            <div className="mt-6 w-full h-1 bg-gray-800 rounded-full overflow-hidden">
+                                <motion.div 
+                                    className="h-full bg-cyan-500"
+                                    initial={{ width: "0%" }}
+                                    animate={{ width: "100%" }}
+                                    transition={{ duration: 4.5, ease: "linear" }}
+                                />
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* 2. REVEAL PHASE */}
+                <AnimatePresence>
+                    {step === "reveal" && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }} 
+                            animate={{ opacity: 1, y: 0 }} 
+                            exit={{ opacity: 0 }}
+                            className="text-center mt-[40vh]" 
+                        >
+                            <div className="font-pixel text-xl md:text-3xl text-cyan-300 drop-shadow-[0_0_10px_rgba(0,255,255,0.8)] mb-4 bg-black/50 p-4 border-y border-cyan-500/30 backdrop-blur-sm">
+                                {"> WELCOME TO 2026"}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* 3. BOOM PHASE */}
+                <AnimatePresence>
+                    {step === "boom" && (
+                        <motion.div 
+                            initial={{ scale: 0.5, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="absolute inset-0 flex flex-col justify-between items-center py-12 md:py-16 pointer-events-none"
+                        >
+                            {/* TOP CONTENT: Greeting */}
+                            <div className="text-center relative px-4 pointer-events-auto mt-20 md:mt-12">
+                                <div className="absolute inset-0 bg-gradient-to-r from-cyber-pink via-cyber-blue to-cyber-green blur-[100px] opacity-20 pointer-events-none" />
+                                
+                                <h2 className="font-pixel text-xl md:text-3xl text-white mb-4 animate-bounce drop-shadow-[0_0_10px_rgba(255,255,255,1)]">
+                                    HAPPY NEW YEAR
+                                </h2>
+                                <h1 className="font-black text-5xl md:text-8xl text-transparent bg-clip-text bg-gradient-to-br from-white via-cyan-300 to-purple-400 drop-shadow-[0_0_30px_rgba(255,255,255,0.6)] uppercase">
+                                    {name}
+                                </h1>
+                            </div>
+
+                            {/* BOTTOM CONTENT: Replay Button */}
+                            <div className="pointer-events-auto mb-24 md:mb-12">
+                                <button 
+                                    onClick={() => window.location.reload()}
+                                    className="px-8 py-3 border border-white/40 bg-white/5 hover:bg-white/20 text-white font-pixel text-xs transition-colors cursor-pointer backdrop-blur-sm shadow-[0_0_15px_rgba(0,0,0,0.5)]"
+                                >
+                                    [ REPLAY ]
+                                </button>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+
+            {/* CRT Scanlines Overlay */}
+            <div className="absolute inset-0 pointer-events-none z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,3px_100%]" />
         </div>
     );
 };

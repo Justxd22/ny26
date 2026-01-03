@@ -68,8 +68,6 @@ export default function RootLayout({
       >
         <div className="noise-overlay" />
         <div className="scanline" />
-        <script src="//cdn.jsdelivr.net/npm/eruda"></script>
-        <script>eruda.init();</script>
         {children}
         <Analytics />
       </body>

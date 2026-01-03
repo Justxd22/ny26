@@ -936,7 +936,7 @@ const ActFinale = ({ name }: { name: string }) => {
                                 <h2 className="font-pixel text-xl md:text-3xl text-white mb-4 animate-bounce drop-shadow-[0_0_10px_rgba(255,255,255,1)]">
                                     HAPPY NEW YEAR
                                 </h2>
-                                <h1 className="font-black text-5xl md:text-8xl text-transparent bg-clip-text bg-gradient-to-br from-white via-cyan-300 to-purple-400 drop-shadow-[0_0_30px_rgba(255,255,255,0.6)] uppercase">
+                                <h1 className="font-black text-7xl md:text-8xl text-transparent bg-clip-text bg-gradient-to-br from-white via-cyan-300 to-purple-400 drop-shadow-[0_0_30px_rgba(255,255,255,0.6)] uppercase">
                                     {name}
                                 </h1>
                             </div>

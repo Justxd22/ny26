@@ -151,17 +151,17 @@ const SceneContent = ({ onComplete, onReady }: { onComplete: () => void, onReady
 
     const interval = setInterval(() => {
       setCurrentIndex((prev) => {
-        if (prev >= sequence.length - 1) {
-            clearInterval(interval);
-            setTimeout(() => {
-                if (onCompleteRef.current) onCompleteRef.current();
-            }, 1000); // Wait a bit after last word
-            return prev;
-        }
+        const next = prev + 1;
         playSound('type'); // Play sound on word change
-        return prev + 1;
+
+        // Loop back to start if we exceed sequence
+        if (next >= sequence.length) {
+            return 0;
+        }
+        return next;
       });
-    }, 1500); // Slightly faster interval
+    }, 1500); 
+
     return () => clearInterval(interval);
   }, []); // Removed onComplete from dependencies
 

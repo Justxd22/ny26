@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import { motion } from "framer-motion-3d";
-import { EffectComposer, ChromaticAberration, Bloom } from "@react-three/postprocessing";
-import { useControls } from "leva"; // Import the GUI hook
+import { EffectComposer, ChromaticAberration } from "@react-three/postprocessing";
+import { useControls, Leva } from "leva"; // Import the GUI hook and component
 import * as THREE from "three";
 import { Lens } from "./LensEffect";
 
@@ -108,10 +108,22 @@ const Word = ({ item, isTarget, config }: { item: any, isTarget: boolean, config
 };
 
 // --- SCENE CONTENT ---
-const SceneContent = () => {
+const SceneContent = ({ onComplete, onReady }: { onComplete: () => void, onReady?: () => void }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const { size } = useThree();
   const isMobile = size.width < 768;
+  
+  // Use a ref for onComplete to avoid resetting the interval when the parent re-renders
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  // Use a ref for onReady to ensure we only call it once
+  const onReadyRef = useRef(onReady);
+  useEffect(() => {
+    onReadyRef.current = onReady;
+  }, [onReady]);
 
 
   // --- LEVA CONTROLS ---
@@ -131,11 +143,25 @@ const SceneContent = () => {
   });
 
   useEffect(() => {
+    // Signal readiness
+    if (onReadyRef.current) {
+        onReadyRef.current();
+    }
+
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % sequence.length);
-    }, 2000);
+      setCurrentIndex((prev) => {
+        if (prev >= sequence.length - 1) {
+            clearInterval(interval);
+            setTimeout(() => {
+                if (onCompleteRef.current) onCompleteRef.current();
+            }, 1000); // Wait a bit after last word
+            return prev;
+        }
+        return prev + 1;
+      });
+    }, 1500); // Slightly faster interval
     return () => clearInterval(interval);
-  }, []);
+  }, []); // Removed onComplete from dependencies
 
   const targetId = sequence[currentIndex];
   const targetObj = gridData.find((item) => item.id === targetId);
@@ -149,6 +175,7 @@ const SceneContent = () => {
 
   return (
     <>
+      <Leva hidden />
       <motion.group
         animate={{ rotateX: rotX, rotateY: rotY, z: -config.camZ + 6 }}
         transition={{ duration: 1.2, type: "spring", stiffness: 35, damping: 15 }}
@@ -163,7 +190,7 @@ const SceneContent = () => {
         ))}
       </motion.group>
 
-      <EffectComposer disableNormalPass>
+      <EffectComposer disableNormalPass multisampling={0}>
 
 
         {/* 2. Chromatic Aberration: Simulates speed/lens distortion */}
@@ -180,11 +207,17 @@ const SceneContent = () => {
   );
 };
 
-export default function SphereText() {
+export default function SphereText({ onComplete, onReady }: { onComplete: () => void, onReady?: () => void }) {
   return (
-    <div className="w-full h-screen bg-black ">
-      <Canvas camera={{ position: [0, 0, 6], fov: 80 }}>
-        <SceneContent />
+    <div className="w-full h-full">
+      <Canvas 
+        camera={{ position: [0, 0, 6], fov: 80 }}
+        gl={{ alpha: true, antialias: false, powerPreference: "default", stencil: false, depth: true }}
+        dpr={[1, 1.5]}
+      >
+        <Suspense fallback={null}>
+            <SceneContent onComplete={onComplete} onReady={onReady} />
+        </Suspense>
       </Canvas>
     </div>
   );

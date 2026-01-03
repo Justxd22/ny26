@@ -7,6 +7,7 @@ import confetti from "canvas-confetti";
 import Snow from "./Snow";
 import FisheyeText from "./FisheyeText";
 import ScanningLens from "./ScanningLens";
+import SphereText from "./SphereText";
 import { playSound } from "@/utils/audio";
 
 // --- BACKGROUND WALL COMPONENT ---
@@ -203,6 +204,11 @@ const Act2_OldWorld = ({ onDelete }: { onDelete: () => void }) => {
     playSound('type');
     setShowWarning(false);
     setIsDeleting(true);
+  };
+
+  const startPurging = () => {
+    // SphereText animation takes approx 10s base, extending by 4s to 14s.
+    // We sync the progress bar and text steps to this duration.
     
     const progressInterval = setInterval(() => {
         setDeleteProgress(prev => {
@@ -212,7 +218,7 @@ const Act2_OldWorld = ({ onDelete }: { onDelete: () => void }) => {
             }
             return prev + 1;
         });
-    }, 40);
+    }, 160); // 140ms * 100 = 14000ms = 14s
 
     const stepInterval = setInterval(() => {
         setStepIndex(prev => {
@@ -227,7 +233,7 @@ const Act2_OldWorld = ({ onDelete }: { onDelete: () => void }) => {
             playSound('type'); 
             return prev + 1;
         });
-    }, 1200); 
+    }, 3000); // 2800ms * 5 steps = 14000ms = 14s
   };
 
   return (
@@ -236,22 +242,34 @@ const Act2_OldWorld = ({ onDelete }: { onDelete: () => void }) => {
       {/* 1. BACKGROUND WALL (Animated Intro -> Static) */}
       <BackgroundWall onIntroComplete={() => setIntroFinished(true)} />
 
-      {/* 2. SCANNING LENS (Distorted Foreground) - Only show after intro */}
-      <AnimatePresence>
-        {introFinished && (
+      {/* 2. SPHERE TEXT (Purging) or SCANNING LENS (Intro) */}
+      <AnimatePresence mode="wait">
+        {introFinished && !isDeleting && (
             <motion.div 
+                key="scanning-lens"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 transition={{ duration: 1, ease: "easeOut" }}
                 className="absolute inset-0 z-10"
             >
                 <ScanningLens 
-                    text={isDeleting ? steps[stepIndex] : "DELETE\n2025?"}
-                    color={isDeleting ? "#ef4444" : "#00ff88"}
+                    text={"DELETE\n2025?"}
+                    color={"#00ff88"}
                     isScanning={true}
                     fontSize={80}
                     intensity={2.5}
                 />
+            </motion.div>
+        )}
+        {isDeleting && (
+             <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="absolute inset-0 z-15"
+            >
+                {/* Use SphereText for the visual during purging, passing a no-op onComplete or handle it if needed */}
+                <SphereText onComplete={() => {}} onReady={startPurging} />
             </motion.div>
         )}
       </AnimatePresence>
@@ -330,98 +348,223 @@ const Act3_Glitch = ({ onComplete }: { onComplete: () => void }) => {
 
     return (
         <div className="relative h-full w-full overflow-hidden flex flex-col items-center justify-center z-10 bg-black">
+        <motion.div 
+            key="error"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} 
+            className="absolute inset-0 w-full h-full flex flex-col items-center justify-center"
+        >
              <BackgroundWall isGlitch={true} />
              <div className="absolute inset-0 z-20 mix-blend-hard-light opacity-80">
                  <ScanningLens 
                     text={"SYSTEM\nFAILURE"} 
                     color="#ff0000" 
                     intensity={4.0} 
-                    speed={5.0} 
+                    speed={5.0}
+                    fontSize={80} 
                     isScanning={true} 
                  />
              </div>
              <div className="z-30 font-pixel text-red-500 text-2xl md:text-5xl animate-pulse bg-black p-4 border-2 border-red-500 shadow-[0_0_50px_rgba(255,0,0,0.8)]">
                 CRITICAL ERROR
              </div>
+            </motion.div>
         </div>
     );
 };
 
+
 // --- ACT IV: THE HYPERSPEED DOWNLOAD ---
 const Act4_Download = ({ onComplete }: { onComplete: () => void }) => {
     const [progress, setProgress] = useState(0);
-    const [currentDownload, setCurrentDownload] = useState("INITIALIZING...");
+    const [logs, setLogs] = useState<string[]>([]);
     
-    const downloads = [
+    // We use refs to manage the batch logic inside the interval without re-rendering issues
+    const fileIndexRef = useRef(0);
+    const batchCountRef = useRef(0);
+    
+    const allDownloads = [
         "NEW_MEMORIES.EXE", "BETTER_DECISIONS.DLL", "UNLIMITED_COFFEE.JAR", 
         "NO_MORE_MONDAYS.SYS", "GOOD_VIBES_ONLY.ZIP", "FINANCIAL_STABILITY.APK",
-        "GYM_MOTIVATION.BAT", "CLEAR_SKIN.PATCH", "LUCK_V2.0.PKG"
+        "GYM_MOTIVATION.BAT", "CLEAR_SKIN.PATCH", "LUCK_V2.0.PKG", 
+        "TOXIC_TRAITS_UNINSTALLER.EXE", "CORE_CONFIDENCE.MSI", "TRAVEL_PLANS_2026.PDF",
+        "HEALTH_OPTIMIZATION.REG", "JOY_OVERLOAD.DAT", "SUCCESS_METRICS.LOG"
     ];
 
     useEffect(() => {
+        // SLOWER Progress Interval (runs every 100ms)
         const interval = setInterval(() => {
-            setProgress(p => {
-                if (p >= 100) {
+            setProgress(prev => {
+                if (prev >= 100) {
                     clearInterval(interval);
-                    playSound('success');
-                    setTimeout(onComplete, 1000);
+                    setTimeout(onComplete, 1500);
                     return 100;
                 }
                 
-                if (Math.random() > 0.7) {
-                    setCurrentDownload(downloads[Math.floor(Math.random() * downloads.length)]);
-                    playSound('type');
-                }
-                
-                return Math.min(p + 1.5, 100);
+                // Increment logic: Slower and steadier
+                // 100% / ~100 ticks = ~1% per tick, we go a bit slower for drama
+                return Math.min(prev + 0.6, 100);
             });
-        }, 80);
-        return () => clearInterval(interval);
+
+        }, 60);
+
+        // SEPARATE Interval for Text Batches (runs slower for readability)
+        const textInterval = setInterval(() => {
+            if (progress >= 100) return;
+
+            // If we have shown 4 lines, clear them (Batch logic)
+            if (batchCountRef.current >= 4) {
+                setLogs([]); // Clear screen
+                batchCountRef.current = 0; // Reset batch count
+                return; // Wait one tick with empty screen
+            }
+
+            // Add next file if available
+            if (fileIndexRef.current < allDownloads.length) {
+                const newFile = allDownloads[fileIndexRef.current];
+                setLogs(prev => [...prev, `> INSTALLING: ${newFile}`]);
+                
+                fileIndexRef.current += 1;
+                batchCountRef.current += 1;
+            } else {
+                // If we ran out of unique files, just generate generic data
+                setLogs(prev => [...prev, `> OPTIMIZING SECTOR ${Math.floor(Math.random() * 900)}...`]);
+                batchCountRef.current += 1;
+            }
+
+        }, 600); // New text line every 600ms (readable speed)
+
+        return () => {
+            clearInterval(interval);
+            clearInterval(textInterval);
+        };
     }, []);
 
+    // Generate MORE lines, THICKER lines, BRIGHTER lines
+    const speedLines = Array.from({ length: 50 }).map((_, i) => ({
+        id: i,
+        left: `${Math.random() * 100}%`,
+        delay: Math.random() * 2,
+        duration: Math.random() * 0.5 + 0.3, // Faster movement
+        width: Math.random() > 0.5 ? 3 : 2 // Varying thickness
+    }));
+
     return (
-        <div className="h-full w-full flex flex-col items-center justify-center bg-transparent text-white font-mono overflow-hidden relative z-10">
-            {/* Hyperspeed Tunnel Effect */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
-                <AnimatePresence mode="popLayout">
+        <div className="h-full w-full flex flex-col items-center justify-center bg-black text-white font-mono overflow-hidden relative z-10">
+            
+            {/* --- BACKGROUND LAYERS --- */}
+            
+            {/* 1. Enhanced CRT Scanline Overlay */}
+            <div className="absolute inset-0 z-50 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,3px_100%] pointer-events-none" />
+            
+            {/* 2. HYPER VISIBLE Speed Lines (Vertical Data Rain) */}
+            <div className="absolute inset-0 z-0">
+                {speedLines.map((line) => (
                     <motion.div
-                        key={currentDownload}
-                        initial={{ scale: 0, opacity: 0, z: -500 }}
-                        animate={{ scale: 1, opacity: 1, z: 0 }}
-                        exit={{ scale: 3, opacity: 0, z: 200 }}
-                        transition={{ duration: 0.5, ease: "easeIn" }}
-                        className="absolute w-full flex justify-center"
-                    >
-                        <FisheyeText 
-                            text={currentDownload} 
-                            color="#00FFFF" 
-                            intensity={3.0} 
-                            fontSize={100}
-                            rotation={Math.sin(Date.now() / 1000) * 10} 
-                            className="w-[120%] h-auto"
-                        />
-                    </motion.div>
-                </AnimatePresence>
+                        key={line.id}
+                        className="absolute top-0 bg-gradient-to-b from-transparent via-cyan-400 to-white shadow-[0_0_15px_#00FFFF]"
+                        style={{ 
+                            left: line.left, 
+                            height: '50vh',
+                            width: `${line.width}px`,
+                            opacity: 0.7 
+                        }}
+                        initial={{ y: -600, opacity: 0 }}
+                        animate={{ y: '120vh', opacity: [0, 1, 0] }}
+                        transition={{
+                            duration: line.duration,
+                            repeat: Infinity,
+                            ease: "linear",
+                            delay: line.delay
+                        }}
+                    />
+                ))}
             </div>
 
-            {/* Central Progress */}
-            <div className="z-20 flex flex-col items-center bg-black/90 p-8 border-4 border-cyber-green shadow-[0_0_50px_rgba(0,255,148,0.5)]">
-                <div className="font-pixel text-2xl md:text-4xl text-cyber-green mb-8 animate-pulse text-center">
-                    INSTALLING 2026...
+            {/* --- MAIN INTERFACE --- */}
+            
+            <div className="z-20 relative w-full max-w-3xl px-6">
+                {/* Holographic Container with INTENSE GLOW */}
+                <div className="bg-black/80 border-2 border-cyan-900 backdrop-blur-md p-6 relative shadow-[0_0_100px_rgba(0,255,255,0.4)]">
+                    
+                    {/* Glowing Corners */}
+                    <div className="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-blue-400" />
+                    <div className="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-blue-400" />
+                    <div className="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-blue-400" />
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-blue-400" />
+
+                    {/* Header Section */}
+                    <div className="flex justify-between items-end mb-8 border-b-2 border-cyan-500/50 pb-4">
+                        <div className="flex flex-col">
+                            <span className="font-incised text-sm text-cyan-200 tracking-[0.3em] drop-shadow-[0_0_5px_rgba(0,255,255,0.8)]">
+                                SYSTEM OVERRIDE
+                            </span>
+                            <h2 className="font-incised text-3xl md:text-5xl text-white italic drop-shadow-[0_0_15px_rgba(0,255,255,0.8)]">
+                                DOWNLOADING <span className="text-cyan-400">2026</span>
+                            </h2>
+                        </div>
+                        <div className="text-right">
+                             <div className="font-pixel text-5xl text-cyan-300 animate-pulse drop-shadow-[0_0_10px_#00FFFF]">
+                                {Math.floor(progress)}<span className="text-2xl align-top">%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* The Progress Bar - THICKER & SLOWER */}
+                    <div className="mb-8 relative">
+                        {/* Container */}
+                        <div className="w-full h-12 bg-gray-900 border-2 border-cyan-600 relative overflow-hidden skew-x-[-10deg] shadow-[0_0_20px_rgba(0,255,255,0.3)]">
+                            {/* Grid Background in bar */}
+                            <div className="absolute inset-0 opacity-30 bg-[linear-gradient(90deg,transparent_90%,#00FFFF_90%)] bg-[length:30px_100%]" />
+                            
+                            {/* Fill */}
+                            <motion.div 
+                                className="h-full bg-gradient-to-r from-blue-700 via-cyan-500 to-white relative"
+                                style={{ width: `${progress}%` }}
+                            >
+                                {/* Glowing leading edge */}
+                                <div className="absolute right-0 top-0 h-full w-2 bg-white blur-[2px]" />
+                                <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%)] bg-[length:20px_20px]" />
+                            </motion.div>
+                        </div>
+
+                        {/* Labels - NOW HIGH VISIBILITY */}
+                        <div className="flex justify-between mt-3 font-mono text-sm md:text-base font-bold text-cyan-200 drop-shadow-[0_0_5px_rgba(0,255,255,1)]">
+                            <span>PACKETS: ENCRYPTED</span>
+                            <span>EST. TIME: T-MINUS 0</span>
+                        </div>
+                    </div>
+
+                    {/* The Terminal Log - BATCHED & READABLE */}
+                    <div className="bg-black border border-cyan-800 p-6 h-48 overflow-hidden relative shadow-inner shadow-cyan-900/50">
+                        {/* Scanline inside terminal */}
+                        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,255,0.05)_50%,transparent_50%)] bg-[length:100%_4px] pointer-events-none" />
+                        
+                        <div className="flex flex-col justify-start h-full gap-3 font-pixel text-sm md:text-lg tracking-wide text-cyan-400">
+                            {logs.map((log, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="drop-shadow-[0_0_8px_rgba(0,255,255,0.6)]"
+                                >
+                                    {log}
+                                </motion.div>
+                            ))}
+                            {/* Blinking Cursor */}
+                            <motion.div 
+                                animate={{ opacity: [0, 1, 0] }}
+                                transition={{ duration: 0.8, repeat: Infinity }}
+                                className="w-3 h-5 bg-cyan-400 inline-block align-middle ml-2 shadow-[0_0_10px_#00FFFF]"
+                            />
+                        </div>
+                    </div>
                 </div>
-                <div className="w-72 md:w-96 h-10 border-4 border-cyber-green p-1">
-                    <div className="h-full bg-cyber-green shadow-[0_0_20px_#00FF94]" style={{ width: `${progress}%` }} />
-                </div>
-                <div className="mt-4 font-mono text-cyber-green text-xl text-center">
-                    {progress}% COMPLETE
+                
+                {/* System ID Footer - HIGH VISIBILITY */}
+                <div className="text-center mt-6 text-cyan-200 font-pixel text-xs md:text-sm tracking-[0.2em] drop-shadow-[0_0_5px_#00FFFF]">
+                    SYS.ID: 2026-ALPHA-OVERRIDE // DO NOT TURN OFF CONSOLE
                 </div>
             </div>
-            
-            {/* Background Stream Lines to simulate speed */}
-             <div className="absolute inset-0 pointer-events-none opacity-20">
-                <div className="absolute top-1/2 left-0 w-full h-[1px] bg-white animate-ping" />
-                <div className="absolute top-0 left-1/2 h-full w-[1px] bg-white animate-ping" />
-             </div>
         </div>
     );
 };
@@ -599,6 +742,13 @@ function MainContent() {
         <div className="absolute bottom-4 left-0 w-full p-2 font-mono text-[10px] text-white/40 flex justify-between z-50 px-8">
             <span>ACT {act}/6</span>
             <span>MEM: {act * 16}MB</span>
+            {/* Dev Skip Button */}
+            <button 
+                onClick={() => setAct(prev => Math.min(prev + 1, 6))}
+                className="pointer-events-auto bg-red-500/20 hover:bg-red-500 text-white px-2 rounded border border-red-500/50"
+            >
+                SKIP
+            </button>
         </div>
     </div>
   );

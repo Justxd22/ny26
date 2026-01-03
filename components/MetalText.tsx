@@ -143,7 +143,7 @@ export default function MetalText() {
   
   const { camX, camY, camZ, fov, rotateSpeed } = useControls("Metal Scene", {
     camX: { value: 0, min: -50, max: 50, step: 0.5 },
-    camY: { value: 10, min: -50, max: 50, step: 0.5 },
+    camY: { value: 20, min: -50, max: 50, step: 0.5 },
     camZ: { value: isMobile ? 35 : 20, min: 10, max: 100, step: 1 },
     fov: { value: 45, min: 20, max: 100, step: 1 },
     rotateSpeed: { value: 5, min: 0, max: 5, step: 0.1 }

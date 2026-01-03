@@ -9,13 +9,13 @@ import { EffectComposer, Bloom } from "@react-three/postprocessing";
 const CubeFace = ({ position, rotation, text, color }: any) => {
   return (
     <group position={position} rotation={rotation}>
-      {/* Glowing Frame */}
-      <mesh position={[0, 0, -0.05]}>
+      {/* Glowing Frame - Moved back to prevent Z-fighting */}
+      <mesh position={[0, 0, -0.2]}>
         <boxGeometry args={[2.2, 2.2, 0.1]} />
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} toneMapped={false} wireframe />
       </mesh>
       
-      {/* Glassy Surface */}
+      {/* Glassy Surface - Kept at 0 */}
       <mesh>
         <planeGeometry args={[2, 2]} />
         <meshPhysicalMaterial 
@@ -29,9 +29,9 @@ const CubeFace = ({ position, rotation, text, color }: any) => {
         />
       </mesh>
 
-      {/* Text */}
+      {/* Text - Moved forward to prevent Z-fighting */}
       <Text
-        position={[0, 0, 0.1]}
+        position={[0, 0, 0.2]}
         fontSize={1}
         font="/font/Incised 901 Nord.ttf"
         color="white"
@@ -131,7 +131,7 @@ const SceneContent = () => {
             <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
             <Sparkles count={200} scale={12} size={4} speed={0.4} opacity={0.5} color="#00ffff" />
 
-            <EffectComposer disableNormalPass multisampling={0}>
+            <EffectComposer enableNormalPass={false} multisampling={0}>
                 <Bloom luminanceThreshold={0.2} mipmapBlur intensity={1.5} radius={0.5} />
             </EffectComposer>
         </>
@@ -143,7 +143,7 @@ export default function InstallationCube() {
   return (
     <div className="w-full h-full absolute inset-0 z-0">
       <Canvas 
-        camera={{ position: [0, 0, 8], fov: 50, near: 0.1, far: 100 }} 
+        camera={{ position: [0, 0, 8], fov: 50, near: 0.5, far: 100 }} 
         gl={{ 
             alpha: false, 
             antialias: true, // Re-enable for mobile quality

@@ -38,6 +38,16 @@ const ScanningLens = ({
   const [lensX, setLensX] = useState(400);
   const [lensY, setLensY] = useState(225);
 
+  const [isIOS, setIsIOS] = useState(false);
+
+  useEffect(() => {
+    // Detect iOS to reduce glow intensity (WebKit shadowBlur bug)
+    if (typeof navigator !== 'undefined') {
+        const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+        setIsIOS(isIOSDevice);
+    }
+  }, []);
+
   // Render the scene (background + text)
   const renderScene = (sceneCtx: CanvasRenderingContext2D, width: number, height: number) => {
     // Clear (Transparent)
@@ -59,7 +69,8 @@ const ScanningLens = ({
     actualLines.forEach((line, index) => {
       const y = startY + (index * lineHeight);
 
-      // Outer glow layers (multiple passes for stronger glow)
+  if (!isIOS) {
+      // Standard Glow (Android/Desktop)
       for (let i = 0; i < 3; i++) {
         sceneCtx.shadowColor = color;
         sceneCtx.shadowBlur = glowIntensity + (i * 10);
@@ -74,6 +85,16 @@ const ScanningLens = ({
       sceneCtx.globalAlpha = 0.8;
       sceneCtx.fillStyle = color;
       sceneCtx.fillText(line.toLowerCase(), width / 2, y);
+      } else {
+          // iOS Safe Mode: Minimal to NO shadow blur to prevent blowout
+          // Just use opacity layering for "glow" look
+          sceneCtx.shadowBlur = 0; 
+          
+          // Faint backing
+          sceneCtx.fillStyle = color;
+          sceneCtx.globalAlpha = 0.2;
+          sceneCtx.fillText(line.toLowerCase(), width / 2, y);
+      }
 
       // Main text (solid)
       sceneCtx.shadowBlur = 0;

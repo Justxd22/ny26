@@ -143,8 +143,15 @@ export default function InstallationCube() {
   return (
     <div className="w-full h-full absolute inset-0 z-0">
       <Canvas 
-        camera={{ position: [0, 0, 8], fov: 50 }} 
-        gl={{ alpha: false, antialias: false, powerPreference: "default", stencil: false, depth: true }}
+        camera={{ position: [0, 0, 8], fov: 50, near: 0.1, far: 100 }} 
+        gl={{ 
+            alpha: false, 
+            antialias: true, // Re-enable for mobile quality
+            powerPreference: "high-performance", // Try high-perf to force better GPU usage
+            stencil: false, 
+            depth: true,
+            logarithmicDepthBuffer: true // Fix Z-fighting/Flickering
+        }}
         dpr={[1, 1.5]}
       >
         <color attach="background" args={['#000000']} />

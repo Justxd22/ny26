@@ -153,8 +153,15 @@ export default function MetalText() {
     <div className="w-full h-full absolute inset-0 z-0">
       <Leva hidden />
       <Canvas
-        camera={{ position: [camX, camY, camZ], fov: 45 }} // Initial FOV
-        gl={{ alpha: false, antialias: false, powerPreference: "default", stencil: false, depth: true }}
+        camera={{ position: [camX, camY, camZ], fov: 45, near: 0.1, far: 200 }} 
+        gl={{ 
+            alpha: false, 
+            antialias: true, 
+            powerPreference: "high-performance", 
+            stencil: false, 
+            depth: true,
+            logarithmicDepthBuffer: true 
+        }}
         dpr={[1, 1.5]}
       >
         <color attach="background" args={['#050505']} />

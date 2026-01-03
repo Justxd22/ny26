@@ -183,7 +183,7 @@ const Act1_Boot = ({ onComplete }: { onComplete: () => void }) => {
 };
 
 // --- ACT II & III: THE OLD WORLD & DELETION ---
-const Act2_OldWorld = ({ onDelete }: { onDelete: () => void }) => {
+const Act2_OldWorld = ({ onDelete, onUnlockAudio }: { onDelete: () => void, onUnlockAudio?: () => void }) => {
   const [showWarning, setShowWarning] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [introFinished, setIntroFinished] = useState(false);
@@ -201,6 +201,8 @@ const Act2_OldWorld = ({ onDelete }: { onDelete: () => void }) => {
   const handleDeleteClick = () => {
       playSound('boot'); // First audible sound after interaction
       playSound('error'); // Immediate feedback for the "Delete" action
+      // Unlock Audio Context for Safari
+      if (onUnlockAudio) onUnlockAudio();
       setShowWarning(true);
   };
 
@@ -967,10 +969,45 @@ function MainContent() {
   const rawName = searchParams.get("name") || "FRIEND";
   const name = rawName.toUpperCase();
   const [act, setAct] = useState(1);
+  
+  // Audio Ref for BGM
+  const bgmRef = useRef<HTMLAudioElement>(null);
+
+  // Safari Unlock: Play (and mute) on first interaction
+  const unlockAudio = () => {
+      const bgm = bgmRef.current;
+      if (bgm) {
+          bgm.volume = 0;
+          bgm.play().then(() => {
+              console.log("BGM Unlocked");
+          }).catch(e => console.error("BGM Unlock Failed", e));
+      }
+  };
+
+  // Music Logic Effect
+  useEffect(() => {
+      if (act === 6 && bgmRef.current) {
+          const bgm = bgmRef.current;
+          bgm.currentTime = 0;
+          bgm.play().catch(e => console.error("BGM Play Failed", e));
+          
+          // Fade In
+          const fade = setInterval(() => {
+              if (bgm.volume < 0.9) {
+                  bgm.volume = Math.min(bgm.volume + 0.05, 1.0);
+              } else {
+                  clearInterval(fade);
+              }
+          }, 200);
+          return () => clearInterval(fade);
+      }
+  }, [act]);
 
   return (
     <div className="fisheye-container">
-        {act >= 6 && <BackgroundMusic />}
+        {/* Hidden Global BGM */}
+        <audio ref={bgmRef} src="/audio/bgm_96.mp3" loop preload="auto" />
+
         {/* GLOBAL OVERLAYS */}
         <div className="scanlines" />
         <div className="fisheye-vignette" />
@@ -978,7 +1015,7 @@ function MainContent() {
         <div className="screen-content">
             <AnimatePresence mode="wait">
                 {act === 1 && <Act1_Boot key="act1" onComplete={() => setAct(2)} />}
-                {act === 2 && <Act2_OldWorld key="act2" onDelete={() => setAct(3)} /> } 
+                {act === 2 && <Act2_OldWorld key="act2" onDelete={() => setAct(3)} onUnlockAudio={unlockAudio} /> } 
                 {act === 3 && <Act3_Glitch key="act3" onComplete={() => setAct(4)} />}
                 {act === 4 && <Act4_Download key="act4" onComplete={() => setAct(5)} />}
                 {act === 5 && <Act5_Installation key="act5" onComplete={() => setAct(6)} />}

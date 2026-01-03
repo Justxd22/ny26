@@ -3,7 +3,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text3D, Center, Environment, Sparkles, Float, Grid, OrbitControls, useHelper } from "@react-three/drei";
 import * as THREE from "three";
 import { EffectComposer, Bloom, Noise, Vignette } from "@react-three/postprocessing";
-import { useControls, button } from "leva";
+import { useControls, button, Leva } from "leva";
 
 const Metal2026 = () => {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -151,6 +151,7 @@ export default function MetalText() {
 
   return (
     <div className="w-full h-full absolute inset-0 z-0">
+      <Leva hidden />
       <Canvas
         camera={{ position: [camX, camY, camZ], fov: 45 }} // Initial FOV
         gl={{ alpha: false, antialias: false, powerPreference: "default", stencil: false, depth: true }}

@@ -10,6 +10,7 @@ import ScanningLens from "./ScanningLens";
 import SphereText from "./SphereText";
 import InstallationCube from "./InstallationCube";
 import MetalText from "./MetalText";
+import BackgroundMusic from "./BackgroundMusic";
 import { playSound } from "@/utils/audio";
 
 // --- BACKGROUND WALL COMPONENT ---
@@ -198,7 +199,8 @@ const Act2_OldWorld = ({ onDelete }: { onDelete: () => void }) => {
   ];
 
   const handleDeleteClick = () => {
-      playSound('error');
+      playSound('boot'); // First audible sound after interaction
+      playSound('error'); // Immediate feedback for the "Delete" action
       setShowWarning(true);
   };
 
@@ -342,10 +344,22 @@ const Act2_OldWorld = ({ onDelete }: { onDelete: () => void }) => {
 // --- ACT III: SYSTEM PURGE ---
 const Act3_Glitch = ({ onComplete }: { onComplete: () => void }) => {
     useEffect(() => {
+        playSound('error');
+        
+        // Loop error sound for glitch effect
+        const interval = setInterval(() => {
+            if (Math.random() > 0.5) playSound('error');
+        }, 500);
+
         const timer = setTimeout(() => {
+            clearInterval(interval);
             onComplete();
         }, 4000);
-        return () => clearTimeout(timer);
+        
+        return () => {
+            clearInterval(interval);
+            clearTimeout(timer);
+        };
     }, [onComplete]);
 
     return (
@@ -402,6 +416,9 @@ const Act4_Download = ({ onComplete }: { onComplete: () => void }) => {
                     return 100;
                 }
                 
+                // Randomly play whoosh during high speed
+                if (Math.random() > 0.9) playSound('whoosh');
+
                 // Increment logic: Slower and steadier
                 // 100% / ~100 ticks = ~1% per tick, we go a bit slower for drama
                 return Math.min(prev + 0.6, 100);
@@ -651,6 +668,8 @@ const Act5_Installation = ({ onComplete }: { onComplete: () => void }) => {
     useEffect(() => {
         if (step === 'complete') {
             playSound('success');
+            // Reboot sound for the transition
+            setTimeout(() => playSound('boot'), 1500);
             setTimeout(onComplete, 2000);
         }
     }, [step, onComplete]);
@@ -951,6 +970,7 @@ function MainContent() {
 
   return (
     <div className="fisheye-container">
+        {act >= 6 && <BackgroundMusic />}
         {/* GLOBAL OVERLAYS */}
         <div className="scanlines" />
         <div className="fisheye-vignette" />

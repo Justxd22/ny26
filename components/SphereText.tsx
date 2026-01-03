@@ -6,6 +6,7 @@ import { Text } from "@react-three/drei";
 import { motion } from "framer-motion-3d";
 import { EffectComposer, ChromaticAberration } from "@react-three/postprocessing";
 import { useControls, Leva } from "leva"; // Import the GUI hook and component
+import { playSound } from "@/utils/audio";
 import * as THREE from "three";
 import { Lens } from "./LensEffect";
 
@@ -157,6 +158,7 @@ const SceneContent = ({ onComplete, onReady }: { onComplete: () => void, onReady
             }, 1000); // Wait a bit after last word
             return prev;
         }
+        playSound('type'); // Play sound on word change
         return prev + 1;
       });
     }, 1500); // Slightly faster interval

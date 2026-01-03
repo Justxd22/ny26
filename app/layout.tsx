@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Silkscreen } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
@@ -19,9 +19,41 @@ const silkscreen = Silkscreen({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#000000",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export const metadata: Metadata = {
-  title: "NY26 | System Update",
-  description: "Rebooting the world for 2026. Identity verification required.",
+  title: "NY26",
+  description: "Rebooting the world for 2026.",
+  openGraph: {
+    title: "NY26",
+    description: "Rebooting the world for 2026. Are you ready?",
+    url: "https://ny26.com", // Replace with actual domain if known
+    siteName: "NY26",
+    images: [
+      {
+        url: "/ccc.jpg",
+        width: 900,
+        height: 900,
+        alt: "NY26 System Reboot",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "NY26",
+    description: "Rebooting the world for 2026.",
+    images: ["/ccc.jpg"],
+  },
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

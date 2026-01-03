@@ -143,7 +143,7 @@ export default function InstallationCube() {
   return (
     <div className="w-full h-full absolute inset-0 z-0">
       <Canvas 
-        camera={{ position: [0, 0, 8], fov: 50, near: 0.5, far: 100 }} 
+        camera={{ position: [0, 10, 8], fov: 50, near: 0.5, far: 100 }} 
         gl={{ 
             alpha: false, 
             antialias: true, // Re-enable for mobile quality

@@ -34,7 +34,7 @@ export default function BackgroundMusic() {
   return (
     <audio 
       ref={audioRef} 
-      src="/audio/bgm.mp3" 
+      src="/audio/bgm_96.mp3" 
       loop 
       preload="auto"
     />

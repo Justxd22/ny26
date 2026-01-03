@@ -10,7 +10,6 @@ import ScanningLens from "./ScanningLens";
 import SphereText from "./SphereText";
 import InstallationCube from "./InstallationCube";
 import MetalText from "./MetalText";
-import BackgroundMusic from "./BackgroundMusic";
 import { playSound } from "@/utils/audio";
 
 // --- BACKGROUND WALL COMPONENT ---
@@ -977,21 +976,15 @@ function MainContent() {
   const unlockAudio = () => {
       const bgm = bgmRef.current;
       if (bgm) {
-          bgm.volume = 0;
+          // Fix for iOS Safari: play immediately on gesture, but pause in the next frame
+          bgm.volume = 0; // Ensure silence
           bgm.play().then(() => {
-              console.log("BGM Unlocked");
-              bgm.pause(); // Stop it immediately
-              bgm.currentTime = 0; // Reset
-              bgm.volume = 0;
-              console.log("BGM Ready to Play on Act 6", bgm.currentTime, bgm.volume);
-              bgm.currentTime = 0;
-              bgm.pause(); // Stop it immediately
-              const fade = setInterval(() => (bgm.volume = Math.max(bgm.volume - 0.05, 0)) || (bgm.volume === 0 && clearInterval(fade)), 50);
-              bgm.pause(); // Stop it immediately
-              console.log("BGM Ready to Play on Act 6", bgm.currentTime, bgm.volume);
-              bgm.pause(); // Stop it immediately
-              console.log("BGM Ready to Play on Act 6", bgm.currentTime, bgm.volume);
-
+              // Yield one frame to allow Safari to register the "playing" state
+              // before pausing. This gives ownership of the audio to the session.
+              requestAnimationFrame(() => {
+                  bgm.pause();
+                  bgm.currentTime = 0;
+              });
           }).catch(e => console.error("BGM Unlock Failed", e));
       }
   };

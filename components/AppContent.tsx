@@ -982,6 +982,7 @@ function MainContent() {
               console.log("BGM Unlocked");
               bgm.pause(); // Stop it immediately
               bgm.currentTime = 0; // Reset
+              bgm.volume = 0;
               console.log("BGM Ready to Play on Act 6", bgm.currentTime, bgm.volume);
           }).catch(e => console.error("BGM Unlock Failed", e));
       }

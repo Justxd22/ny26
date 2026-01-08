@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌐 NY26 | System Reboot
 
-## Getting Started
+A cinematic, Digital win98 inspired look, New Year's experience built with **Next.js**, **React Three Fiber**, and **Framer Motion**.
 
-First, run the development server:
+**Live Demo:** [ny26-rho.vercel.app](https://ny26-rho.vercel.app)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 scences
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+NY26 is an interactive journey through the "System Reboot" of our reality. The experience is divided into several acts:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1.  **ACT I: THE ARRIVAL** - OS Boot sequence and protocol initialization.
+2.  **ACT II: THE OLD WORLD** - Identification of 2025 trends and memories.
+3.  **ACT III: DELETION** - User-triggered purge of the previous year.
+4.  **ACT IV: DOWNLOAD** - High-speed installation of 2026 modules.
+5.  **ACT V: INSTALLATION** - 3D Cube optimization and life-habit patching.
+6.  **ACT VI: REVELATION** - Majestic chrome reveal of 2026.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 👤 Personalized Celebration
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+You can customize the experience for anyone!
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**To customize the name:**
+Simply add `?name=YourName` to the end of the URL.
 
-## Deploy on Vercel
+*Example:*  
+`https://ny26-rho.vercel.app/?name=Elon`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📸 Screenshots
+
+<div style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px;">
+  <img src="public/screenshots/s1.png" alt="Act 1: Boot" height="200" />
+  <img src="public/screenshots/s2.png" alt="Act 2: Deletion" height="200" />
+  <img src="public/screenshots/s3.png" alt="Act 3: Glitch" height="200" />
+  <img src="public/screenshots/s4.png" alt="Act 4: Download" height="200" />
+  <img src="public/screenshots/s5.png" alt="Act 5: Installation" height="200" />
+  <img src="public/screenshots/s6.png" alt="Act 6: Revelation" height="200" />
+</div>
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework:** Next.js 16
+- **3D Engine:** React Three Fiber (Three.js)
+- **Animations:** Framer Motion
+- **Post-Processing:** @react-three/postprocessing (Bloom, Chromatic Aberration, Vignette)
+- **Audio:** Web Audio API (Procedural SFX) & HTML5 Audio (BGM)
+- **Styling:** Tailwind CSS
+
+---
+
+## 💻 Local Development
+
+1.  Clone the repository
+2.  Install dependencies:
+    ```bash
+    pnpm i
+    ```
+3.  Run the development server:
+    ```bash
+    pnpm dev
+    ```
+4.  Open [http://localhost:3000](http://localhost:3000)
+
+---
+
+## 🎵 Sound Design
+
+The project features a custom procedural audio engine for tactile UI feedback (typing, glitches, whooshes) and a cinematic background music transition that peaks during the final revelation.
+
+# Happy 2026 🚀
